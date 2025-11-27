@@ -18,12 +18,13 @@ class QuizOption extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bgColor = Colors.white;
     if (isSelected) {
-      if (isCorrect == null)
+      if (isCorrect == null) {
         bgColor = Colors.blue.shade100;
-      else if (isCorrect == true)
+      } else if (isCorrect == true) {
         bgColor = Colors.green.shade200;
-      else
+      } else {
         bgColor = Colors.red.shade200;
+      }
     }
     return GestureDetector(
       onTap: onTap,

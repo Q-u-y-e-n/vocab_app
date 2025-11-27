@@ -59,8 +59,9 @@ class QuizService {
   ) {
     // Lấy nghĩa tiếng Việt chuẩn
     String correct = VocabParser.getVietnamese(target.meaning);
-    if (correct.isEmpty)
+    if (correct.isEmpty) {
       correct = target.meaning; // Fallback nếu không parse được
+    }
 
     List<String> options = [correct];
     final random = Random();

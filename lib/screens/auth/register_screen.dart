@@ -72,11 +72,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ).register(_username.text, _password.text);
 
                       if (success && mounted) {
+                        // ignore: use_build_context_synchronously
                         Navigator.pop(context);
+                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Đăng ký thành công")),
                         );
                       } else if (mounted) {
+                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Username đã tồn tại")),
                         );

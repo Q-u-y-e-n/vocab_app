@@ -75,7 +75,8 @@ class SettingsScreen extends StatelessWidget {
             runSpacing: 15,
             alignment: WrapAlignment.center,
             children: _colors.map((color) {
-              bool isSelected = settings.flashcardColor.value == color.value;
+              bool isSelected =
+                  settings.flashcardColor.toARGB32() == color.toARGB32();
               return GestureDetector(
                 onTap: () => settings.setFlashcardColor(color),
                 child: Container(
@@ -89,7 +90,7 @@ class SettingsScreen extends StatelessWidget {
                         : null,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
+                        color: Colors.grey..withValues(alpha: 0.3),
                         blurRadius: 5,
                         offset: const Offset(0, 2),
                       ),

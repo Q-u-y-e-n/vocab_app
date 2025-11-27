@@ -221,6 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 listen: false,
               ).deleteVocabulary(vocab.id!, vocab.userId);
+              // ignore: use_build_context_synchronously
               if (mounted) Navigator.pop(context);
             },
             child: const Text("Xóa"),
@@ -314,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black..withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -357,9 +358,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           height: 90,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color..withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color..withValues(alpha: 0.3)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -462,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        backgroundColor: Colors.blue.withOpacity(0.1),
+                        backgroundColor: Colors.blue..withValues(alpha: 0.1),
                         side: BorderSide.none,
                         onPressed: _showAddTopicDialog,
                       ),
@@ -519,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black..withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -544,7 +545,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: 50,
                                     height: 50,
                                     decoration: BoxDecoration(
-                                      color: Colors.blueAccent.withOpacity(0.1),
+                                      color: Colors.blueAccent
+                                        ..withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     alignment: Alignment.center,

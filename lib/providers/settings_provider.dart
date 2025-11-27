@@ -46,9 +46,9 @@ class SettingsProvider with ChangeNotifier {
 
   // Thay đổi màu Flashcard
   Future<void> setFlashcardColor(Color color) async {
-    _flashcardColorValue = color.value;
+    _flashcardColorValue = color.toARGB32();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('flashcardColor', color.value);
+    await prefs.setInt('flashcardColor', color.toARGB32());
     notifyListeners();
   }
 }

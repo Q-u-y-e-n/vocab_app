@@ -23,7 +23,7 @@ class VocabularyDetailScreen extends StatelessWidget {
     final textColor = isDark ? Colors.white : Colors.black87;
     // Thêm dấu chấm than ! vào sau [400]
     final subTextColor = isDark ? Colors.grey[400]! : Colors.grey;
-    final iconColor = isDark ? Colors.white70 : Colors.black54;
+    // final iconColor = isDark ? Colors.white70 : Colors.black54;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -66,7 +66,7 @@ class VocabularyDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    color: Colors.black..withValues(alpha: isDark ? 0.3 : 0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -87,7 +87,7 @@ class VocabularyDetailScreen extends StatelessWidget {
                   const SizedBox(height: 15),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange..withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -141,7 +141,7 @@ class VocabularyDetailScreen extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black..withValues(alpha: 0.05),
                       blurRadius: 10,
                     ),
                   ],
@@ -151,7 +151,7 @@ class VocabularyDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.1),
+                        color: Colors.redAccent..withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.mic, color: Colors.redAccent),
@@ -208,7 +208,7 @@ class VocabularyDetailScreen extends StatelessWidget {
         border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            color: Colors.black..withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

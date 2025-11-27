@@ -74,10 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       if (success && mounted) {
                         Navigator.pushReplacement(
+                          // ignore: use_build_context_synchronously
                           context,
                           MaterialPageRoute(builder: (_) => const HomeScreen()),
                         );
                       } else if (mounted) {
+                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Login failed")),
                         );

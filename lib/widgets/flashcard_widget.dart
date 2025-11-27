@@ -91,14 +91,14 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: baseColor.withOpacity(0.4),
+            color: baseColor..withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
         // Màu nền Gradient chính
         gradient: LinearGradient(
-          colors: [baseColor.withOpacity(0.8), baseColor],
+          colors: [baseColor..withValues(alpha: 0.8), baseColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -115,7 +115,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1), // Màu trắng mờ
+                color: Colors.white..withValues(alpha: 0.1), // Màu trắng mờ
               ),
             ),
           ),
@@ -128,7 +128,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white..withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -141,7 +141,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               height: 30,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white..withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -197,9 +197,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
     String vietnamese = VocabParser.getVietnamese(fullMeaning);
     String englishDef = fullMeaning;
     if (phonetic.isNotEmpty) englishDef = englishDef.replaceAll(phonetic, "");
-    if (vietnamese.isNotEmpty)
+    if (vietnamese.isNotEmpty) {
       englishDef = englishDef.split("🇻🇳").first.replaceAll("🇬🇧", "");
-    englishDef = englishDef.trim();
+      englishDef = englishDef.trim();
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).cardColor;
@@ -218,7 +219,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black..withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -282,10 +283,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.amber.withOpacity(0.1)
+                    ? Colors.amber.withValues(alpha: 0.1)
                     : Colors.amber[50],
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                border: Border.all(color: Colors.amber..withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -128,6 +127,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           if (mounted) setState(() => _isPlayingRecording = false);
         });
       } catch (e) {
+        // ignore: avoid_print
         print("Lỗi phát âm: $e");
         setState(() => _isPlayingRecording = false);
       }
@@ -154,7 +154,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
       ),
       hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
       filled: true,
-      fillColor: isDark ? Colors.grey[800]!.withOpacity(0.5) : Colors.grey[100],
+      fillColor: isDark
+          ? Colors.grey[800]!.withValues(alpha: 0.5)
+          : Colors.grey[100],
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -188,7 +190,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -247,8 +249,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
                           // Hiệu ứng bóng đổ nhẹ cho thanh tìm kiếm
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(
-                                isDark ? 0.2 : 0.05,
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.2 : 0.05,
                               ),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
@@ -370,7 +372,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     else
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
@@ -544,8 +546,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
                           } else {
                             String? path = await _recordService
                                 .startRecording();
-                            if (path != null)
+                            if (path != null) {
                               setState(() => _isRecording = true);
+                            }
                           }
                         },
                         child: AnimatedContainer(
@@ -570,7 +573,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
                             boxShadow: [
                               if (_isRecording)
                                 BoxShadow(
-                                  color: Colors.red.withOpacity(0.5),
+                                  color: Colors.red.withValues(alpha: 0.5),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),
@@ -614,12 +617,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.blueAccent.withOpacity(0.1)
+                          ? Colors.blueAccent.withValues(alpha: 0.1)
                           : Colors.blue[50],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isDark
-                            ? Colors.blueAccent.withOpacity(0.3)
+                            ? Colors.blueAccent.withValues(alpha: 0.3)
                             : Colors.transparent,
                       ),
                     ),
@@ -698,11 +701,17 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
 
     String finalMeaning = "";
-    if (_phonetic.isNotEmpty) finalMeaning += "$_phonetic\n";
-    if (_engDefController.text.isNotEmpty)
+    if (_phonetic.isNotEmpty) {
+      finalMeaning += "$_phonetic\n";
+    }
+
+    if (_engDefController.text.isNotEmpty) {
       finalMeaning += "🇬🇧 ${_engDefController.text}\n";
-    if (_vieDefController.text.isNotEmpty)
+    }
+
+    if (_vieDefController.text.isNotEmpty) {
       finalMeaning += "🇻🇳 ${_vieDefController.text}";
+    }
 
     String finalExample = _autoExampleController.text.trim();
     if (_customExampleController.text.trim().isNotEmpty) {

@@ -32,6 +32,26 @@ class DictionaryService {
         return data.map((e) => e['word'] as String).toList();
       }
     } catch (e) {
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
+      // ignore: avoid_print
       print("Error suggestions: $e");
     }
     return [];
@@ -54,6 +74,7 @@ class DictionaryService {
         }
       }
     } catch (e) {
+      // ignore: avoid_print
       print("Fallback example error: $e");
     }
     return "";
@@ -122,6 +143,7 @@ class DictionaryService {
             );
             vieDef = translation.text;
           } catch (e) {
+            // ignore: avoid_print
             print("Translation error: $e");
           }
         }
@@ -135,6 +157,7 @@ class DictionaryService {
         );
       }
     } catch (e) {
+      // ignore: avoid_print
       print("Error details: $e");
     }
     return null;

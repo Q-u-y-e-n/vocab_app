@@ -179,11 +179,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty)
+    if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
         body: const Center(child: Text("Cần ít nhất 4 từ vựng.")),
       );
+    }
 
     final question = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
@@ -260,7 +261,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? Colors.blue.withOpacity(0.2)
+                                  ? Colors.blue.withValues(alpha: 0.2)
                                   : Colors.blue[50],
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -313,12 +314,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
         if (_isAnswered) {
           if (isCorrectAnswer) {
-            bgColor = Colors.green.withOpacity(isDark ? 0.3 : 0.2); // Xanh nhạt
+            bgColor = Colors.green
+              ..withValues(alpha: isDark ? 0.3 : 0.2); // Xanh nhạt
             borderColor = Colors.green;
             icon = Icons.check_circle;
             textColor = isDark ? Colors.white : Colors.black;
           } else if (isSelected) {
-            bgColor = Colors.red.withOpacity(isDark ? 0.3 : 0.2); // Đỏ nhạt
+            bgColor = Colors.red
+              ..withValues(alpha: isDark ? 0.3 : 0.2); // Đỏ nhạt
             borderColor = Colors.red;
             icon = Icons.cancel;
             textColor = isDark ? Colors.white : Colors.black;
@@ -441,11 +444,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (isCorrect == true) {
         borderColor = Colors.green;
-        bgColor = Colors.green.withOpacity(0.2);
+        bgColor = Colors.green..withValues(alpha: 0.2);
       }
       if (isCorrect == false) {
         borderColor = Colors.red;
-        bgColor = Colors.red.withOpacity(0.2);
+        bgColor = Colors.red..withValues(alpha: 0.2);
         textColor = Colors.red;
       }
     }
