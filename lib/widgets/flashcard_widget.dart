@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 import '../models/vocabulary_model.dart';
-import '../providers/settings_provider.dart'; // Import Provider cài đặt
+import '../providers/settings_provider.dart';
 import '../services/tts_service.dart';
 import '../utils/string_utils.dart';
 
@@ -44,7 +44,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
   void _flipCard() {
     if (_isFront) {
       _controller.forward();
-      _tts.speak(widget.vocabulary.word); // Tự động đọc khi lật
+      _tts.speak(widget.vocabulary.word);
     } else {
       _controller.reverse();
     }
@@ -67,11 +67,11 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
             transform: transform,
             alignment: Alignment.center,
             child: _animation.value < 0.5
-                ? _buildFront()
+                ? _buildFront() // Mặt trước (Có hiệu ứng bọt biển)
                 : Transform(
                     transform: Matrix4.identity()..rotateY(pi),
                     alignment: Alignment.center,
-                    child: _buildBack(),
+                    child: _buildBack(), // Mặt sau
                   ),
           );
         },
@@ -79,62 +79,119 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
     );
   }
 
-  // --- MẶT TRƯỚC: Dùng màu từ Cài đặt ---
+  // --- MẶT TRƯỚC: HIỆU ỨNG BỌT BIỂN & GRADIENT ---
   Widget _buildFront() {
-    // Lấy màu người dùng đã chọn trong Cài đặt
     final settings = Provider.of<SettingsProvider>(context);
-    final cardColor = settings.flashcardColor;
+    final baseColor = settings.flashcardColor; // Màu người dùng chọn
 
     return Container(
       width: double.infinity,
       height: 500,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        // Gradient dựa trên màu cài đặt
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        // Màu nền Gradient chính
         gradient: LinearGradient(
-          colors: [cardColor.withOpacity(0.7), cardColor],
+          colors: [baseColor.withOpacity(0.8), baseColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      // Stack để xếp chồng các lớp "bọt biển"
+      child: Stack(
         children: [
-          const Icon(Icons.touch_app, color: Colors.white54, size: 30),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              widget.vocabulary.word,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+          // Bọt biển 1 (To, góc trên phải)
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1), // Màu trắng mờ
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "Chạm để lật",
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          // Bọt biển 2 (Nhỏ, góc dưới trái)
+          Positioned(
+            bottom: -30,
+            left: -30,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          // Bọt biển 3 (Nhỏ xíu, ở giữa)
+          Positioned(
+            top: 100,
+            left: 50,
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.15),
+              ),
+            ),
+          ),
+
+          // Nội dung chính (Từ vựng)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.touch_app, color: Colors.white60, size: 36),
+                const SizedBox(height: 30),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    widget.vocabulary.word,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 42, // Chữ to hơn
+                      fontWeight: FontWeight.w900, // Đậm hơn
+                      letterSpacing: 1.5,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(2, 2),
+                          blurRadius: 4,
+                          color: Colors.black26,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  "Chạm để lật",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // --- MẶT SAU: Chi tiết ---
+  // --- MẶT SAU: SẠCH SẼ, CHI TIẾT ---
   Widget _buildBack() {
-    // Tách dữ liệu
     String fullMeaning = widget.vocabulary.meaning;
     String phonetic = VocabParser.getPhonetic(fullMeaning);
     String vietnamese = VocabParser.getVietnamese(fullMeaning);
@@ -144,7 +201,6 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
       englishDef = englishDef.split("🇻🇳").first.replaceAll("🇬🇧", "");
     englishDef = englishDef.trim();
 
-    // Thích ứng Dark Mode
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).cardColor;
     final textColor = isDark ? Colors.white : Colors.black87;
@@ -155,15 +211,16 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey.shade200,
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 12,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -173,75 +230,72 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
           Text(
             widget.vocabulary.word,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.blueAccent,
             ),
           ),
 
           if (phonetic.isNotEmpty)
-            Text(
-              phonetic,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                phonetic,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
 
-          const Divider(height: 30),
+          const Divider(height: 40, thickness: 1),
 
           Text(
             vietnamese,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 15),
 
           if (englishDef.isNotEmpty)
             Text(
               englishDef,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: isDark ? Colors.grey[400] : Colors.grey[700],
               ),
-              maxLines: 2,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
           if (widget.vocabulary.example.isNotEmpty)
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.amber.withOpacity(0.2)
+                    ? Colors.amber.withOpacity(0.1)
                     : Colors.amber[50],
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.amber.withOpacity(0.3)),
               ),
               child: Column(
                 children: [
-                  const Text(
-                    "Ví dụ:",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                  const Icon(Icons.lightbulb, color: Colors.amber, size: 20),
+                  const SizedBox(height: 8),
                   Text(
                     widget.vocabulary.example,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontStyle: FontStyle.italic,
                       color: isDark ? Colors.grey[300] : Colors.grey[800],
                     ),
@@ -259,6 +313,13 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
               icon: const Icon(Icons.play_circle_fill),
               label: const Text("Ghi âm của bạn"),

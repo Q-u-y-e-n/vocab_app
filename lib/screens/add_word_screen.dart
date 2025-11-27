@@ -11,7 +11,6 @@ import '../services/dictionary_service.dart';
 import '../services/tts_service.dart';
 
 class AddWordScreen extends StatefulWidget {
-  // Tham số nhận dữ liệu khi muốn Sửa (null nếu là Thêm mới)
   final Vocabulary? vocabulary;
 
   const AddWordScreen({super.key, this.vocabulary});
@@ -25,12 +24,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
   final _wordController = TextEditingController();
   final _engDefController = TextEditingController();
   final _vieDefController = TextEditingController();
-
-  // Tách biệt 2 loại ví dụ
-  final _autoExampleController = TextEditingController(); // Ví dụ từ API
-  final _customExampleController = TextEditingController(); // Ví dụ tự viết
-
-  // QUAN TRỌNG: Khai báo rõ kiểu <String> để tránh lỗi Type Mismatch
+  final _autoExampleController = TextEditingController();
+  final _customExampleController = TextEditingController();
   final SuggestionsController<String> _suggestionsController =
       SuggestionsController<String>();
 
@@ -47,25 +42,23 @@ class _AddWordScreenState extends State<AddWordScreen> {
   bool _isRecording = false;
   bool _isPlayingRecording = false;
 
+  // --- CACHE (Tối ưu tốc độ) ---
+  final Map<String, List<String>> _suggestionCache = {};
+
   @override
   void initState() {
     super.initState();
-    // Nếu có dữ liệu truyền vào (Chế độ Sửa) -> Điền sẵn vào các ô
     if (widget.vocabulary != null) {
       _fillDataForEdit();
     }
   }
 
-  // Hàm tách dữ liệu từ Database để điền vào form khi Sửa
   void _fillDataForEdit() {
     final v = widget.vocabulary!;
     _wordController.text = v.word;
     _audioPath = v.audioPath;
 
-    // 1. Xử lý Nghĩa (Format lưu trữ: /phonetic/\n🇬🇧 Eng\n🇻🇳 Vie)
     String fullMeaning = v.meaning;
-
-    // Tách Phiên âm
     RegExp phoneticExp = RegExp(r'/.+/');
     Match? match = phoneticExp.firstMatch(fullMeaning);
     if (match != null) {
@@ -73,7 +66,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
       fullMeaning = fullMeaning.replaceAll(_phonetic, "").trim();
     }
 
-    // Tách Anh - Việt
     if (fullMeaning.contains("🇻🇳")) {
       var parts = fullMeaning.split("🇻🇳");
       _vieDefController.text = parts.last.trim();
@@ -83,7 +75,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
       _engDefController.text = fullMeaning.replaceAll("🇬🇧", "").trim();
     }
 
-    // 2. Xử lý Ví dụ (Format lưu trữ: Auto \n\n ✍️ Custom)
     String fullExample = v.example;
     if (fullExample.contains("✍️")) {
       var exParts = fullExample.split("✍️");
@@ -106,10 +97,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
     super.dispose();
   }
 
-  // Hàm gọi API lấy chi tiết từ vựng
   void _fetchDetails(String word) async {
     if (word.isEmpty) return;
-    FocusScope.of(context).unfocus(); // Ẩn bàn phím
+    FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
     final result = await _dictService.fetchWordDetails(word);
@@ -121,15 +111,14 @@ class _AddWordScreenState extends State<AddWordScreen> {
           _phonetic = result.phonetic;
           _engDefController.text = result.engMeaning;
           _vieDefController.text = result.vieMeaning;
-          _autoExampleController.text = result.example; // Điền ví dụ tự động
+          _autoExampleController.text = result.example;
         } else {
-          _phonetic = ""; // Không tìm thấy
+          _phonetic = "";
         }
       });
     }
   }
 
-  // Hàm nghe lại ghi âm
   void _playRecording() async {
     if (_audioPath != null) {
       try {
@@ -139,141 +128,283 @@ class _AddWordScreenState extends State<AddWordScreen> {
           if (mounted) setState(() => _isPlayingRecording = false);
         });
       } catch (e) {
-        print("Lỗi phát âm thanh: $e");
+        print("Lỗi phát âm: $e");
         setState(() => _isPlayingRecording = false);
       }
     }
   }
 
-  // Widget khung Card UI (Helper)
+  // --- UI COMPONENTS ---
+
+  InputDecoration _buildInputDecoration({
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    String? hint,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(
+        icon,
+        color: isDark ? Colors.blueAccent[100] : Colors.blueAccent,
+      ),
+      labelStyle: TextStyle(
+        color: isDark ? Colors.grey[400] : Colors.grey[600],
+      ),
+      hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
+      filled: true,
+      fillColor: isDark ? Colors.grey[800]!.withOpacity(0.5) : Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   Widget _buildSectionCard({
     required String title,
     required List<Widget> children,
+    required bool isDark,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.transparent,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title.isNotEmpty) ...[
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 15),
-            ],
-            ...children,
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           widget.vocabulary == null ? "Thêm Từ Mới" : "Sửa Từ Vựng",
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // --- 1. TỪ VỰNG (Autocomplete) ---
+            // --- 1. TỪ VỰNG (THANH TÌM KIẾM ĐẸP & TỐI ƯU) ---
             _buildSectionCard(
               title: "TỪ VỰNG (ENGLISH)",
+              isDark: isDark,
               children: [
                 Row(
                   children: [
                     Expanded(
-                      child: TypeAheadField<String>(
-                        controller: _wordController,
-                        suggestionsController: _suggestionsController,
-                        builder: (context, controller, focusNode) {
-                          return TextField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.blueAccent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          // Hiệu ứng bóng đổ nhẹ cho thanh tìm kiếm
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(
+                                isDark ? 0.2 : 0.05,
+                              ),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                            decoration: const InputDecoration(
-                              hintText: "Nhập từ...",
-                              border: InputBorder.none,
-                            ),
-                          );
-                        },
-                        suggestionsCallback: (pattern) async =>
-                            await _dictService.getSuggestions(pattern),
-                        itemBuilder: (context, suggestion) => ListTile(
-                          leading: const Icon(Icons.search, size: 18),
-                          title: Text(suggestion),
-                          dense: true,
+                          ],
                         ),
-                        onSelected: (suggestion) {
-                          _wordController.text = suggestion;
-                          _fetchDetails(suggestion);
-                        },
+                        child: TypeAheadField<String>(
+                          controller: _wordController,
+                          suggestionsController: _suggestionsController,
+                          // TỐI ƯU 1: Debounce Duration (Đợi 500ms sau khi ngừng gõ mới gọi API)
+                          debounceDuration: const Duration(milliseconds: 500),
+                          // Hiệu ứng Animation khi hiện gợi ý
+                          animationDuration: const Duration(milliseconds: 300),
+
+                          builder: (context, controller, focusNode) {
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "Nhập từ...",
+                                hintStyle: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
+                                ),
+                                filled: true,
+                                fillColor: isDark
+                                    ? const Color(0xFF2C2C2C)
+                                    : const Color(0xFFF5F7FA),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.search,
+                                  color: Colors.blueAccent,
+                                ),
+                                // Nút xóa nhanh
+                                suffixIcon: controller.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(
+                                          Icons.clear,
+                                          color: Colors.grey,
+                                          size: 20,
+                                        ),
+                                        onPressed: () => controller.clear(),
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+
+                          suggestionsCallback: (pattern) async {
+                            if (pattern.trim().isEmpty) return [];
+                            // TỐI ƯU 2: Caching (Kiểm tra xem đã tìm từ này chưa)
+                            if (_suggestionCache.containsKey(pattern)) {
+                              return _suggestionCache[pattern]!;
+                            }
+                            // Nếu chưa có cache, mới gọi API
+                            var results = await _dictService.getSuggestions(
+                              pattern,
+                            );
+                            _suggestionCache[pattern] =
+                                results; // Lưu vào cache
+                            return results;
+                          },
+
+                          itemBuilder: (context, suggestion) => ListTile(
+                            leading: const Icon(
+                              Icons.history,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                            title: Text(
+                              suggestion,
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            tileColor: isDark
+                                ? const Color(0xFF2C2C2C)
+                                : Colors.white,
+                          ),
+                          onSelected: (suggestion) {
+                            _wordController.text = suggestion;
+                            _fetchDetails(suggestion);
+                          },
+                          decorationBuilder: (context, child) {
+                            return Material(
+                              type: MaterialType.card,
+                              elevation: 8,
+                              color: isDark
+                                  ? const Color(0xFF2C2C2C)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              child: child,
+                            );
+                          },
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 15),
                     if (_isLoading)
                       const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 24,
+                        height: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     else
-                      IconButton(
-                        icon: const Icon(
-                          Icons.volume_up_rounded,
-                          color: Colors.orange,
-                          size: 32,
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        onPressed: () =>
-                            _ttsService.speak(_wordController.text),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.volume_up_rounded,
+                            color: Colors.orange,
+                            size: 28,
+                          ),
+                          onPressed: () =>
+                              _ttsService.speak(_wordController.text),
+                        ),
                       ),
                   ],
                 ),
                 if (_phonetic.isNotEmpty)
                   Container(
+                    margin: const EdgeInsets.only(top: 12),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(5),
+                      color: isDark ? Colors.grey[800] : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+                      ),
                     ),
                     child: Text(
                       _phonetic,
                       style: TextStyle(
-                        color: Colors.grey[700],
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
                         fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -283,34 +414,37 @@ class _AddWordScreenState extends State<AddWordScreen> {
             // --- 2. ĐỊNH NGHĨA ---
             _buildSectionCard(
               title: "ĐỊNH NGHĨA",
+              isDark: isDark,
               children: [
                 TextField(
                   controller: _engDefController,
                   maxLines: null,
-                  decoration: const InputDecoration(
-                    labelText: "Định nghĩa (English)",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.flag_circle, color: Colors.blue),
+                  style: TextStyle(color: textColor),
+                  decoration: _buildInputDecoration(
+                    label: "Định nghĩa (English)",
+                    icon: Icons.flag_circle,
+                    isDark: isDark,
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _vieDefController,
                   maxLines: null,
-                  decoration: const InputDecoration(
-                    labelText: "Nghĩa Tiếng Việt",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.translate, color: Colors.red),
+                  style: TextStyle(color: textColor),
+                  decoration: _buildInputDecoration(
+                    label: "Nghĩa Tiếng Việt",
+                    icon: Icons.translate,
+                    isDark: isDark,
                   ),
                 ),
               ],
             ),
 
-            // --- 3. VÍ DỤ ---
+            // --- 3. CÂU VÍ DỤ ---
             _buildSectionCard(
               title: "CÂU VÍ DỤ",
+              isDark: isDark,
               children: [
-                // Ví dụ tự động (Auto)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -318,29 +452,38 @@ class _AddWordScreenState extends State<AddWordScreen> {
                       child: TextField(
                         controller: _autoExampleController,
                         maxLines: null,
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: textColor),
+                        decoration: InputDecoration(
                           labelText: "Ví dụ gợi ý (Tự động)",
+                          labelStyle: TextStyle(
+                            color: isDark
+                                ? Colors.amber[200]
+                                : Colors.amber[800],
+                          ),
                           border: InputBorder.none,
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.smart_toy_outlined,
                             color: Colors.amber,
-                            size: 24,
+                            size: 26,
                           ),
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.volume_up_rounded,
-                        color: Colors.grey,
+                        color: isDark ? Colors.grey[400] : Colors.grey,
                       ),
                       onPressed: () =>
                           _ttsService.speak(_autoExampleController.text),
                     ),
                   ],
                 ),
-                const Divider(height: 30, thickness: 1),
-                // Ví dụ thủ công (Custom)
+                Divider(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  thickness: 1,
+                  height: 30,
+                ),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -348,11 +491,20 @@ class _AddWordScreenState extends State<AddWordScreen> {
                       child: TextField(
                         controller: _customExampleController,
                         maxLines: null,
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: textColor),
+                        decoration: InputDecoration(
                           labelText: "Ví dụ của bạn (Thêm)",
                           hintText: "Tự đặt câu ví dụ...",
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          ),
+                          labelStyle: TextStyle(
+                            color: isDark
+                                ? Colors.green[200]
+                                : Colors.green[800],
+                          ),
                           border: InputBorder.none,
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.edit_note,
                             color: Colors.green,
                             size: 28,
@@ -361,9 +513,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.volume_up_rounded,
-                        color: Colors.grey,
+                        color: isDark ? Colors.grey[400] : Colors.grey,
                       ),
                       onPressed: () =>
                           _ttsService.speak(_customExampleController.text),
@@ -375,13 +527,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
             // --- 4. GHI ÂM ---
             _buildSectionCard(
-              title: "LUYỆN NÓI (GHI ÂM)",
+              title: "LUYỆN NÓI",
+              isDark: isDark,
               children: [
-                Column(
-                  children: [
-                    // Nút Mic
-                    Center(
-                      child: GestureDetector(
+                Center(
+                  child: Column(
+                    children: [
+                      GestureDetector(
                         onTap: () async {
                           if (_isRecording) {
                             String? path = await _recordService.stopRecording();
@@ -404,7 +556,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
                             color: _isRecording
                                 ? Colors.redAccent
                                 : (_audioPath != null
-                                      ? Colors.white
+                                      ? (isDark
+                                            ? Colors.grey[800]
+                                            : Colors.white)
                                       : Colors.blueAccent),
                             shape: BoxShape.circle,
                             border: Border.all(
@@ -435,115 +589,107 @@ class _AddWordScreenState extends State<AddWordScreen> {
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Trạng thái text (Đã sửa lỗi TextAlign)
-                    Text(
-                      _isRecording
-                          ? "Đang ghi âm..."
-                          : (_audioPath == null
-                                ? "Nhấn mic để bắt đầu"
-                                : "Nhấn mic để ghi âm lại"),
-                      style: TextStyle(
-                        color: _isRecording ? Colors.red : Colors.grey,
-                        fontWeight: _isRecording
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                      textAlign: TextAlign.center, // Sử dụng đúng TextAlign
-                    ),
-
-                    // Khung Nghe lại
-                    if (_audioPath != null && !_isRecording) ...[
-                      const SizedBox(height: 15),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: _playRecording,
-                              icon: Icon(
-                                _isPlayingRecording
-                                    ? Icons.volume_up
-                                    : Icons.play_circle_fill,
-                                color: Colors.blue,
-                                size: 30,
-                              ),
-                            ),
-                            const Expanded(
-                              child: Text(
-                                "Nghe lại ghi âm",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueGrey,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () =>
-                                  setState(() => _audioPath = null),
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 12),
+                      Text(
+                        _isRecording
+                            ? "Đang ghi âm..."
+                            : (_audioPath == null
+                                  ? "Nhấn mic để bắt đầu"
+                                  : "Nhấn mic để ghi lại"),
+                        style: TextStyle(
+                          color: _isRecording
+                              ? Colors.red
+                              : (isDark ? Colors.grey[400] : Colors.grey),
+                          fontWeight: _isRecording
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
+                if (_audioPath != null && !_isRecording)
+                  Container(
+                    margin: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.blueAccent.withOpacity(0.1)
+                          : Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.blueAccent.withOpacity(0.3)
+                            : Colors.transparent,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: _playRecording,
+                          icon: Icon(
+                            _isPlayingRecording
+                                ? Icons.volume_up
+                                : Icons.play_circle_fill,
+                            color: Colors.blueAccent,
+                            size: 32,
+                          ),
+                        ),
+                        Text(
+                          "Nghe lại bản ghi",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.blue[200] : Colors.blueGrey,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() => _audioPath = null),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
 
             const SizedBox(height: 20),
-
-            // --- NÚT LƯU ---
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 5,
                 ),
                 onPressed: _saveVocabulary,
                 child: Text(
-                  widget.vocabulary == null
-                      ? "LƯU TỪ VỰNG"
-                      : "CẬP NHẬT TỪ VỰNG",
+                  widget.vocabulary == null ? "LƯU TỪ VỰNG" : "CẬP NHẬT",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    letterSpacing: 1.0,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  // --- LOGIC LƯU VÀO DB ---
   void _saveVocabulary() async {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (user == null) return;
-
     if (_wordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -551,7 +697,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return;
     }
 
-    // 1. Ghép chuỗi Nghĩa
     String finalMeaning = "";
     if (_phonetic.isNotEmpty) finalMeaning += "$_phonetic\n";
     if (_engDefController.text.isNotEmpty)
@@ -559,7 +704,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
     if (_vieDefController.text.isNotEmpty)
       finalMeaning += "🇻🇳 ${_vieDefController.text}";
 
-    // 2. Ghép chuỗi Ví dụ
     String finalExample = _autoExampleController.text.trim();
     if (_customExampleController.text.trim().isNotEmpty) {
       if (finalExample.isNotEmpty) finalExample += "\n\n";
@@ -567,19 +711,16 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
 
     final newVocab = Vocabulary(
-      id: widget.vocabulary?.id, // Giữ ID nếu đang sửa
+      id: widget.vocabulary?.id,
       userId: user.id!,
-      // Giữ lại các thông tin cũ (Topic, Favorite) nếu đang sửa
       topicId: widget.vocabulary?.topicId,
       isFavorite: widget.vocabulary?.isFavorite ?? false,
-
       word: _wordController.text.trim(),
       meaning: finalMeaning.trim(),
       example: finalExample,
       audioPath: _audioPath,
     );
 
-    // Gọi Provider
     if (widget.vocabulary == null) {
       await Provider.of<VocabProvider>(
         context,
@@ -593,10 +734,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
 
     if (mounted) {
-      Navigator.pop(context); // Quay về
+      Navigator.pop(context);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Thao tác thành công!")));
+      ).showSnackBar(const SnackBar(content: Text("Thành công!")));
     }
   }
 }

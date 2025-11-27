@@ -19,12 +19,10 @@ class _QuizScreenState extends State<QuizScreen> {
   int _currentIndex = 0;
   int _score = 0;
 
-  // Trạng thái chung
   bool _isAnswered = false;
   bool? _isCorrect;
-  String? _selectedOption; // Lưu lại đáp án người dùng vừa chọn
+  String? _selectedOption;
 
-  // Trạng thái riêng cho Spelling
   List<String> _userSpelling = [];
   List<String> _poolLetters = [];
   List<int> _selectedIndices = [];
@@ -54,24 +52,13 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  // --- XỬ LÝ LOGIC CHUNG ---
-
-  // Hàm kết thúc lượt chơi (Dùng chung cho cả 3 loại câu hỏi)
   void _finishTurn(bool correct) {
-    // 1. LUÔN LUÔN ĐỌC TIẾNG ANH (Bất kể đúng sai)
     final question = _questions[_currentIndex];
-    String textToSpeak = "";
-
-    if (question.type == QuizType.multipleChoice) {
-      textToSpeak =
-          question.questionText; // Trắc nghiệm: Câu hỏi là từ tiếng Anh
-    } else {
-      textToSpeak =
-          question.correctAnswer; // Điền từ/Ghép từ: Đáp án là từ tiếng Anh
-    }
+    String textToSpeak = question.type == QuizType.multipleChoice
+        ? question.questionText
+        : question.correctAnswer;
     _tts.speak(textToSpeak);
 
-    // 2. Cập nhật điểm và trạng thái
     if (correct) _score++;
 
     setState(() {
@@ -79,7 +66,6 @@ class _QuizScreenState extends State<QuizScreen> {
       _isCorrect = correct;
     });
 
-    // 3. Chuyển câu sau 2 giây (tăng lên xíu để kịp nhìn đáp án đúng)
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (_currentIndex < _questions.length - 1) {
         setState(() {
@@ -92,17 +78,13 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  // --- XỬ LÝ TỪNG LOẠI CÂU HỎI ---
-
-  // 1. Trắc nghiệm & Điền từ
   void _handleMultipleChoice(String option) {
     if (_isAnswered) return;
-    _selectedOption = option; // Lưu lại cái mình vừa chọn
+    _selectedOption = option;
     bool correct = option == _questions[_currentIndex].correctAnswer;
     _finishTurn(correct);
   }
 
-  // 2. Spelling: Chọn chữ
   void _onLetterTap(int index, String char) {
     if (_isAnswered || _selectedIndices.contains(index)) return;
 
@@ -111,7 +93,6 @@ class _QuizScreenState extends State<QuizScreen> {
       _selectedIndices.add(index);
     });
 
-    // Kiểm tra khi đã điền đủ
     if (_userSpelling.length ==
         _questions[_currentIndex].correctAnswer.length) {
       String result = _userSpelling.join();
@@ -122,7 +103,6 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  // 2. Spelling: Xóa chữ
   void _onSlotTap(int indexInUserList) {
     if (_isAnswered) return;
     setState(() {
@@ -132,12 +112,20 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _showResultDialog() {
+    // Lấy theme để dialog đẹp ở cả 2 chế độ
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Kết Quả", textAlign: TextAlign.center),
+        title: Text(
+          "Kết Quả",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -153,7 +141,10 @@ class _QuizScreenState extends State<QuizScreen> {
             const SizedBox(height: 20),
             Text(
               "Bạn đúng $_score / ${_questions.length} câu",
-              style: const TextStyle(fontSize: 18),
+              style: TextStyle(
+                fontSize: 18,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
             ),
           ],
         ),
@@ -197,23 +188,31 @@ class _QuizScreenState extends State<QuizScreen> {
     final question = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
 
+    // Kiểm tra chế độ tối
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FA),
+      backgroundColor: Theme.of(
+        context,
+      ).scaffoldBackgroundColor, // Màu nền theo theme
       appBar: AppBar(
-        title: Text("Câu hỏi ${_currentIndex + 1}/${_questions.length}"),
+        title: Text(
+          "Câu hỏi ${_currentIndex + 1}/${_questions.length}",
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        iconTheme: IconThemeData(color: textColor), // Nút Back đổi màu
       ),
       body: Column(
         children: [
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.grey[300],
+            backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
             color: Colors.blueAccent,
             minHeight: 6,
           ),
@@ -228,7 +227,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardColor, // Màu thẻ theo theme
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(color: Colors.black12, blurRadius: 10),
@@ -242,7 +241,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               : (question.type == QuizType.spelling
                                     ? "Ghép từ vào chỗ trống:"
                                     : "Điền từ vào chỗ trống:"),
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(color: subTextColor),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -255,21 +254,24 @@ class _QuizScreenState extends State<QuizScreen> {
                             height: 1.4,
                           ),
                         ),
-                        // Luôn hiện giải thích khi đã trả lời
                         if (_isAnswered) ...[
                           const SizedBox(height: 10),
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue[50],
+                              color: isDark
+                                  ? Colors.blue.withOpacity(0.2)
+                                  : Colors.blue[50],
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               question.explanation ?? "",
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontStyle: FontStyle.italic,
-                                color: Colors.blueGrey,
+                                color: isDark
+                                    ? Colors.lightBlue[100]
+                                    : Colors.blueGrey,
                               ),
                             ),
                           ),
@@ -281,9 +283,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
                   // --- PHẦN TRẢ LỜI ---
                   if (question.type == QuizType.spelling)
-                    _buildSpellingInterface()
+                    _buildSpellingInterface(isDark)
                   else
-                    _buildOptionsList(question),
+                    _buildOptionsList(question, isDark),
 
                   const Spacer(),
                 ],
@@ -295,29 +297,31 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // --- UI: TRẮC NGHIỆM & ĐIỀN TỪ (LOGIC MÀU SẮC Ở ĐÂY) ---
-  Widget _buildOptionsList(QuizQuestion question) {
+  // --- UI: TRẮC NGHIỆM & ĐIỀN TỪ ---
+  Widget _buildOptionsList(QuizQuestion question, bool isDark) {
     return Column(
       children: question.options.map((option) {
         bool isCorrectAnswer = option == question.correctAnswer;
         bool isSelected = option == _selectedOption;
 
-        Color bgColor = Colors.white;
-        Color borderColor = Colors.grey[300]!;
+        Color bgColor = isDark
+            ? const Color(0xFF2C2C2C)
+            : Colors.white; // Màu nền nút mặc định
+        Color borderColor = isDark ? Colors.grey[700]! : Colors.grey[300]!;
+        Color textColor = isDark ? Colors.white : Colors.grey[800]!;
         IconData? icon;
 
         if (_isAnswered) {
-          // 1. Luôn hiển thị MÀU XANH cho đáp án đúng
           if (isCorrectAnswer) {
-            bgColor = Colors.green[100]!;
+            bgColor = Colors.green.withOpacity(isDark ? 0.3 : 0.2); // Xanh nhạt
             borderColor = Colors.green;
             icon = Icons.check_circle;
-          }
-          // 2. Nếu người dùng chọn SAI -> Hiển thị MÀU ĐỎ ở ô người dùng chọn
-          else if (isSelected) {
-            bgColor = Colors.red[100]!;
+            textColor = isDark ? Colors.white : Colors.black;
+          } else if (isSelected) {
+            bgColor = Colors.red.withOpacity(isDark ? 0.3 : 0.2); // Đỏ nhạt
             borderColor = Colors.red;
             icon = Icons.cancel;
+            textColor = isDark ? Colors.white : Colors.black;
           }
         }
 
@@ -340,9 +344,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: _isAnswered && (isCorrectAnswer || isSelected)
-                          ? Colors.black
-                          : Colors.grey[800],
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -356,7 +358,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   // --- UI: SPELLING ---
-  Widget _buildSpellingInterface() {
+  Widget _buildSpellingInterface(bool isDark) {
     return Column(
       children: [
         Wrap(
@@ -367,12 +369,16 @@ class _QuizScreenState extends State<QuizScreen> {
             if (index >= _userSpelling.length &&
                 _userSpelling.length <
                     _questions[_currentIndex].correctAnswer.length) {
-              return _buildSlotBox("", isEmpty: true);
+              return _buildSlotBox("", isEmpty: true, isDark: isDark);
             }
             if (index >= _userSpelling.length) return const SizedBox();
             return GestureDetector(
               onTap: () => _onSlotTap(index),
-              child: _buildSlotBox(_userSpelling[index], isCorrect: _isCorrect),
+              child: _buildSlotBox(
+                _userSpelling[index],
+                isCorrect: _isCorrect,
+                isDark: isDark,
+              ),
             );
           }),
         ),
@@ -392,11 +398,11 @@ class _QuizScreenState extends State<QuizScreen> {
                   height: 50,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
+                        color: Colors.black12,
                         blurRadius: 4,
                         offset: const Offset(0, 3),
                       ),
@@ -419,21 +425,28 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _buildSlotBox(String char, {bool isEmpty = false, bool? isCorrect}) {
-    Color borderColor = Colors.grey[400]!;
-    Color bgColor = Colors.grey[200]!;
+  Widget _buildSlotBox(
+    String char, {
+    bool isEmpty = false,
+    bool? isCorrect,
+    required bool isDark,
+  }) {
+    Color borderColor = isDark ? Colors.grey[600]! : Colors.grey[400]!;
+    Color bgColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+    Color textColor = isDark ? Colors.white : Colors.black;
 
     if (!isEmpty) {
-      bgColor = Colors.white;
+      bgColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
       borderColor = Colors.blueAccent;
-      // Logic màu cho spelling khi kết thúc
+
       if (isCorrect == true) {
         borderColor = Colors.green;
-        bgColor = Colors.green[50]!;
+        bgColor = Colors.green.withOpacity(0.2);
       }
       if (isCorrect == false) {
         borderColor = Colors.red;
-        bgColor = Colors.red[50]!;
+        bgColor = Colors.red.withOpacity(0.2);
+        textColor = Colors.red;
       }
     }
 
@@ -451,7 +464,7 @@ class _QuizScreenState extends State<QuizScreen> {
         style: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: (isCorrect == false) ? Colors.red : Colors.black,
+          color: textColor,
         ),
       ),
     );

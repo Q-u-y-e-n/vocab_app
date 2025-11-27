@@ -14,18 +14,35 @@ class VocabularyDetailScreen extends StatelessWidget {
     final tts = TtsService();
     final audioPlayer = AudioPlayer();
 
+    // 1. Xác định chế độ Tối/Sáng
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Định nghĩa bộ màu sắc
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    // Thêm dấu chấm than ! vào sau [400]
+    final subTextColor = isDark ? Colors.grey[400]! : Colors.grey;
+    final iconColor = isDark ? Colors.white70 : Colors.black54;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FA),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text("Chi Tiết Từ Vựng"),
+        title: Text(
+          "Chi Tiết Từ Vựng",
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor), // Đổi màu nút Back
         actions: [
           // Nút Sửa
           IconButton(
             icon: const Icon(Icons.edit),
+            color: textColor,
             onPressed: () {
               Navigator.pushReplacement(
-                // Dùng pushReplacement để khi sửa xong quay lại Home load lại
                 context,
                 MaterialPageRoute(
                   builder: (_) => AddWordScreen(vocabulary: vocabulary),
@@ -40,17 +57,18 @@ class VocabularyDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Card Từ vựng chính
+            // --- CARD 1: TỪ VỰNG CHÍNH ---
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                color: cardColor,
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
-                    blurRadius: 10,
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -58,61 +76,94 @@ class VocabularyDetailScreen extends StatelessWidget {
                 children: [
                   Text(
                     vocabulary.word,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
                       color: Colors.blueAccent,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.volume_up_rounded,
-                      size: 40,
-                      color: Colors.orange,
+                  const SizedBox(height: 15),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: () => tts.speak(vocabulary.word),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.volume_up_rounded,
+                        size: 36,
+                        color: Colors.orange,
+                      ),
+                      onPressed: () => tts.speak(vocabulary.word),
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // Card Nghĩa
+            // --- CARD 2: NGHĨA ---
             _buildInfoCard(
               title: "Định nghĩa & Phiên âm",
               content: vocabulary.meaning,
               icon: Icons.menu_book,
+              isDark: isDark,
+              cardColor: cardColor,
+              textColor: textColor,
+              subTextColor: subTextColor,
             ),
 
-            // Card Ví dụ
+            // --- CARD 3: VÍ DỤ ---
             if (vocabulary.example.isNotEmpty)
               _buildInfoCard(
                 title: "Ví dụ minh họa",
                 content: vocabulary.example,
                 icon: Icons.lightbulb,
+                isDark: isDark,
+                cardColor: cardColor,
+                textColor: textColor,
+                subTextColor: subTextColor,
                 onSpeak: () => tts.speak(vocabulary.example),
               ),
 
-            // Card Ghi âm cá nhân
+            // --- CARD 4: GHI ÂM ---
             if (vocabulary.audioPath != null)
               Container(
                 margin: const EdgeInsets.only(top: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.transparent,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const CircleAvatar(
-                      backgroundColor: Colors.redAccent,
-                      child: Icon(Icons.mic, color: Colors.white),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.mic, color: Colors.redAccent),
                     ),
                     const SizedBox(width: 16),
-                    const Text(
+                    Text(
                       "Ghi âm của bạn",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        fontSize: 16,
+                      ),
                     ),
                     const Spacer(),
                     IconButton(
@@ -128,16 +179,23 @@ class VocabularyDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
+  // Widget con tái sử dụng
   Widget _buildInfoCard({
     required String title,
     required String content,
     required IconData icon,
+    required bool isDark,
+    required Color cardColor,
+    required Color textColor,
+    required Color subTextColor,
     VoidCallback? onSpeak,
   }) {
     return Container(
@@ -145,34 +203,63 @@ class VocabularyDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: Colors.grey),
-              const SizedBox(width: 8),
+              Icon(icon, size: 20, color: Colors.blueAccent),
+              const SizedBox(width: 10),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.grey,
+                style: TextStyle(
+                  color: subTextColor,
                   fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 0.5,
                 ),
               ),
               if (onSpeak != null) ...[
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.volume_up, color: Colors.blueGrey),
-                  onPressed: onSpeak,
+                InkWell(
+                  onTap: onSpeak,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.volume_up_rounded,
+                      color: subTextColor,
+                      size: 22,
+                    ),
+                  ),
                 ),
               ],
             ],
           ),
-          const Divider(),
-          Text(content, style: const TextStyle(fontSize: 16, height: 1.5)),
+          Divider(
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            height: 24,
+          ),
+          Text(
+            content,
+            style: TextStyle(
+              fontSize: 17,
+              height: 1.6,
+              color: textColor,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ],
       ),
     );

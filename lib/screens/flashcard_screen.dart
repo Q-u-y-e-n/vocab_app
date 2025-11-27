@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/vocab_provider.dart';
-import '../widgets/flashcard_widget.dart'; // Import widget vừa tạo
+import '../widgets/flashcard_widget.dart';
 
 class FlashcardScreen extends StatefulWidget {
   const FlashcardScreen({super.key});
@@ -11,34 +11,45 @@ class FlashcardScreen extends StatefulWidget {
 }
 
 class _FlashcardScreenState extends State<FlashcardScreen> {
-  final PageController _pageController = PageController(
-    viewportFraction: 0.85,
-  ); // Hiển thị 1 phần thẻ sau
+  final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    // Lấy danh sách từ vựng từ Provider
     final vocabList = Provider.of<VocabProvider>(context).vocabList;
 
+    // 1. Kiểm tra xem đang ở chế độ Tối hay Sáng
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Định nghĩa màu chữ dựa trên chế độ (Trắng nếu tối, Đen nếu sáng)
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FA),
+      // 3. Sử dụng màu nền theo Theme (để Dark Mode hoạt động đúng)
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
-        title: const Text("Flashcard"),
+        title: Text(
+          "Flashcard",
+          // Áp dụng màu chữ cho Tiêu đề
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // Đổi màu nút Back (Mũi tên quay lại)
+        iconTheme: IconThemeData(color: textColor),
         actions: [
-          // Hiển thị số lượng: 1/10
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 20),
               child: Text(
                 "${_currentIndex + 1}/${vocabList.length}",
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.black,
+                  // Áp dụng màu chữ cho số đếm
+                  color: textColor,
                 ),
               ),
             ),
@@ -46,7 +57,12 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
         ],
       ),
       body: vocabList.isEmpty
-          ? const Center(child: Text("Chưa có từ vựng nào để học."))
+          ? Center(
+              child: Text(
+                "Chưa có từ vựng nào để học.",
+                style: TextStyle(color: textColor),
+              ),
+            )
           : Column(
               children: [
                 const SizedBox(height: 20),
@@ -66,14 +82,15 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Thanh tiến trình
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: LinearProgressIndicator(
                     value: (vocabList.isEmpty)
                         ? 0
                         : (_currentIndex + 1) / vocabList.length,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor: isDark
+                        ? Colors.grey[800]
+                        : Colors.grey[300],
                     color: Colors.blueAccent,
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(10),
