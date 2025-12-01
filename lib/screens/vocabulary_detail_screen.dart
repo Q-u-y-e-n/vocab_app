@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:vocab_app/services/tts_service.dart';
 import '../models/vocabulary_model.dart';
+import '../utils/string_utils.dart'; // Import để tách phiên âm
 import 'add_word_screen.dart';
 
 class VocabularyDetailScreen extends StatelessWidget {
@@ -14,253 +15,355 @@ class VocabularyDetailScreen extends StatelessWidget {
     final tts = TtsService();
     final audioPlayer = AudioPlayer();
 
-    // 1. Xác định chế độ Tối/Sáng
+    // 1. Theme Logic
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // 2. Định nghĩa bộ màu sắc
-    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
-    // Thêm dấu chấm than ! vào sau [400]
-    final subTextColor = isDark ? Colors.grey[400]! : Colors.grey;
-    // final iconColor = isDark ? Colors.white70 : Colors.black54;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    // 2. Tách dữ liệu (Phiên âm, Nghĩa)
+    String fullMeaning = vocabulary.meaning;
+    String phonetic = VocabParser.getPhonetic(fullMeaning);
+    // Loại bỏ phiên âm khỏi chuỗi nghĩa để hiển thị sạch sẽ hơn
+    if (phonetic.isNotEmpty) {
+      fullMeaning = fullMeaning.replaceAll(phonetic, "").trim();
+    }
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bgColor,
+      // AppBar trong suốt để tôn lên Hero Card
       appBar: AppBar(
-        title: Text(
-          "Chi Tiết Từ Vựng",
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        title: const Text(
+          "Chi Tiết",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor), // Đổi màu nút Back
+        iconTheme: IconThemeData(color: textColor),
         actions: [
-          // Nút Sửa
-          IconButton(
-            icon: const Icon(Icons.edit),
-            color: textColor,
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddWordScreen(vocabulary: vocabulary),
-                ),
-              );
-            },
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit_rounded, size: 20),
+              color: textColor,
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddWordScreen(vocabulary: vocabulary),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- CARD 1: TỪ VỰNG CHÍNH ---
+            // --- 1. HERO CARD (TỪ VỰNG CHÍNH) ---
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+              height: 220,
               decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black..withValues(alpha: isDark ? 0.3 : 0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                    color: Colors.blueAccent.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
+                // Gradient nền xanh -> Nút trắng sẽ nổi bật
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0061ff), Color(0xFF60efff)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              child: Column(
+              child: Stack(
                 children: [
-                  Text(
-                    vocabulary.word,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.blueAccent,
-                      letterSpacing: 1.2,
+                  // Họa tiết trang trí
+                  Positioned(
+                    top: -20,
+                    right: -20,
+                    child: _buildDecorationCircle(100),
+                  ),
+                  Positioned(
+                    bottom: -30,
+                    left: -20,
+                    child: _buildDecorationCircle(80),
+                  ),
+
+                  // Nội dung chính
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          vocabulary.word,
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        if (phonetic.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                phonetic,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.orange..withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.volume_up_rounded,
-                        size: 36,
-                        color: Colors.orange,
-                      ),
+
+                  // Nút Loa (Đặt nổi ở góc dưới phải của Card)
+                  Positioned(
+                    bottom: 15,
+                    right: 15,
+                    child: FloatingActionButton.small(
+                      heroTag: "speak_btn",
+                      backgroundColor: Colors.white,
+                      elevation: 4,
                       onPressed: () => tts.speak(vocabulary.word),
+                      child: const Icon(
+                        Icons.volume_up_rounded,
+                        color: Colors.blueAccent,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
 
-            // --- CARD 2: NGHĨA ---
-            _buildInfoCard(
-              title: "Định nghĩa & Phiên âm",
-              content: vocabulary.meaning,
-              icon: Icons.menu_book,
-              isDark: isDark,
-              cardColor: cardColor,
-              textColor: textColor,
-              subTextColor: subTextColor,
+            const SizedBox(height: 30),
+
+            // --- 2. ĐỊNH NGHĨA (Giao diện sạch) ---
+            _buildSectionHeader(
+              "Định nghĩa",
+              Icons.menu_book_rounded,
+              Colors.orange,
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 25),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                fullMeaning,
+                style: TextStyle(fontSize: 18, height: 1.6, color: textColor),
+              ),
             ),
 
-            // --- CARD 3: VÍ DỤ ---
-            if (vocabulary.example.isNotEmpty)
-              _buildInfoCard(
-                title: "Ví dụ minh họa",
-                content: vocabulary.example,
-                icon: Icons.lightbulb,
-                isDark: isDark,
-                cardColor: cardColor,
-                textColor: textColor,
-                subTextColor: subTextColor,
-                onSpeak: () => tts.speak(vocabulary.example),
+            // --- 3. VÍ DỤ ---
+            if (vocabulary.example.isNotEmpty) ...[
+              Row(
+                children: [
+                  _buildSectionHeader(
+                    "Ví dụ minh họa",
+                    Icons.lightbulb_rounded,
+                    Colors.amber,
+                  ),
+                  const Spacer(),
+                  // Nút loa nhỏ cho ví dụ
+                  IconButton(
+                    icon: const Icon(Icons.volume_up_rounded, size: 20),
+                    color: subTextColor,
+                    onPressed: () => tts.speak(vocabulary.example),
+                  ),
+                ],
               ),
-
-            // --- CARD 4: GHI ÂM ---
-            if (vocabulary.audioPath != null)
               Container(
-                margin: const EdgeInsets.only(top: 20),
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(top: 5, bottom: 25),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.amber.withOpacity(0.1)
+                      : Colors.amber[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                ),
+                child: Text(
+                  vocabulary.example,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? Colors.amber[100] : Colors.grey[800],
+                  ),
+                ),
+              ),
+            ],
+
+            // --- 4. AUDIO PLAYER (GHI ÂM CỦA BẠN) ---
+            if (vocabulary.audioPath != null) ...[
+              _buildSectionHeader(
+                "Ghi âm của bạn",
+                Icons.mic_rounded,
+                Colors.redAccent,
+              ),
+              Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 40),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
+                ),
                 decoration: BoxDecoration(
                   color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.transparent,
-                  ),
+                  borderRadius: BorderRadius.circular(
+                    50,
+                  ), // Bo tròn như viên thuốc
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black..withValues(alpha: 0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
+                  border: Border.all(
+                    color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent..withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.mic, color: Colors.redAccent),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      "Ghi âm của bạn",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.play_circle_fill,
-                        size: 40,
-                        color: Colors.green,
-                      ),
-                      onPressed: () => audioPlayer.play(
+                    // Nút Play to rõ
+                    GestureDetector(
+                      onTap: () => audioPlayer.play(
                         DeviceFileSource(vocabulary.audioPath!),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(
+                          color: Colors.green, // Nền xanh lá
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.greenAccent,
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    // Waveform giả lập (cho đẹp)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Click để nghe lại",
+                            style: TextStyle(color: subTextColor, fontSize: 12),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 4,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-
-            const SizedBox(height: 40),
+            ],
           ],
         ),
       ),
     );
   }
 
-  // Widget con tái sử dụng
-  Widget _buildInfoCard({
-    required String title,
-    required String content,
-    required IconData icon,
-    required bool isDark,
-    required Color cardColor,
-    required Color textColor,
-    required Color subTextColor,
-    VoidCallback? onSpeak,
-  }) {
+  // Widget tiêu đề section
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget hình tròn trang trí cho Hero Card
+  Widget _buildDecorationCircle(double size) {
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(20),
-      width: double.infinity,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black..withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: Colors.blueAccent),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  color: subTextColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              if (onSpeak != null) ...[
-                const Spacer(),
-                InkWell(
-                  onTap: onSpeak,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      Icons.volume_up_rounded,
-                      color: subTextColor,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          Divider(
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
-            height: 24,
-          ),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 17,
-              height: 1.6,
-              color: textColor,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(0.1),
       ),
     );
   }

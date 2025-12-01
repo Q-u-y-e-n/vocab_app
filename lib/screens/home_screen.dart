@@ -198,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 listen: false,
               ).deleteVocabulary(vocab.id!, vocab.userId);
+              // ignore: use_build_context_synchronously
               if (mounted) Navigator.pop(context);
             },
             child: const Text("Xóa"),
