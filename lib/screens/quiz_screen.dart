@@ -53,6 +53,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _finishTurn(bool correct) {
+    // 1. Đọc tiếng Anh
     final question = _questions[_currentIndex];
     String textToSpeak = question.type == QuizType.multipleChoice
         ? question.questionText
@@ -61,23 +62,28 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (correct) _score++;
 
+    // 2. Cập nhật giao diện (Kích hoạt Animation màu sắc)
     setState(() {
       _isAnswered = true;
       _isCorrect = correct;
     });
 
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (_currentIndex < _questions.length - 1) {
-        setState(() {
-          _currentIndex++;
-          _initQuestionData();
-        });
-      } else {
-        _showResultDialog();
+    // 3. Đợi lâu hơn (2.5 giây) để người dùng kịp nhìn kết quả
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted) {
+        if (_currentIndex < _questions.length - 1) {
+          setState(() {
+            _currentIndex++;
+            _initQuestionData();
+          });
+        } else {
+          _showResultDialog();
+        }
       }
     });
   }
 
+  // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
   void _handleMultipleChoice(String option) {
     if (_isAnswered) return;
     _selectedOption = option;
@@ -112,9 +118,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _showResultDialog() {
-    // Lấy theme để dialog đẹp ở cả 2 chế độ
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -179,26 +183,22 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty) {
+    if (_questions.isEmpty)
       return Scaffold(
         appBar: AppBar(),
         body: const Center(child: Text("Cần ít nhất 4 từ vựng.")),
       );
-    }
 
     final question = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
 
-    // Kiểm tra chế độ tối
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
     return Scaffold(
-      backgroundColor: Theme.of(
-        context,
-      ).scaffoldBackgroundColor, // Màu nền theo theme
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Câu hỏi ${_currentIndex + 1}/${_questions.length}",
@@ -207,16 +207,24 @@ class _QuizScreenState extends State<QuizScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor), // Nút Back đổi màu
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
-            color: Colors.blueAccent,
-            minHeight: 6,
+          // Thanh tiến trình mượt mà
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+            tween: Tween<double>(begin: 0, end: progress),
+            builder: (context, value, _) => LinearProgressIndicator(
+              value: value,
+              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: Colors.blueAccent,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
+
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -224,14 +232,18 @@ class _QuizScreenState extends State<QuizScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Spacer(),
-                  // --- PHẦN CÂU HỎI ---
+                  // --- KHUNG CÂU HỎI ---
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: cardColor, // Màu thẻ theo theme
-                      borderRadius: BorderRadius.circular(20),
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 10),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -242,41 +254,46 @@ class _QuizScreenState extends State<QuizScreen> {
                               : (question.type == QuizType.spelling
                                     ? "Ghép từ vào chỗ trống:"
                                     : "Điền từ vào chỗ trống:"),
-                          style: TextStyle(color: subTextColor),
+                          style: TextStyle(color: subTextColor, fontSize: 16),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
                           question.questionText,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
                             color: Colors.blueAccent,
                             height: 1.4,
                           ),
                         ),
-                        if (_isAnswered) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.blue.withValues(alpha: 0.2)
-                                  : Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              question.explanation ?? "",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                color: isDark
-                                    ? Colors.lightBlue[100]
-                                    : Colors.blueGrey,
+                        // Giải thích hiện ra từ từ
+                        if (_isAnswered)
+                          AnimatedOpacity(
+                            opacity: _isAnswered ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 500),
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 20),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isCorrect == true
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                question.explanation ?? "",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCorrect == true
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),
@@ -298,45 +315,47 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // --- UI: TRẮC NGHIỆM & ĐIỀN TỪ ---
+  // --- 1. GIAO DIỆN TRẮC NGHIỆM & ĐIỀN TỪ ---
   Widget _buildOptionsList(QuizQuestion question, bool isDark) {
     return Column(
       children: question.options.map((option) {
         bool isCorrectAnswer = option == question.correctAnswer;
         bool isSelected = option == _selectedOption;
 
-        Color bgColor = isDark
-            ? const Color(0xFF2C2C2C)
-            : Colors.white; // Màu nền nút mặc định
+        Color bgColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
         Color borderColor = isDark ? Colors.grey[700]! : Colors.grey[300]!;
         Color textColor = isDark ? Colors.white : Colors.grey[800]!;
         IconData? icon;
 
         if (_isAnswered) {
           if (isCorrectAnswer) {
-            bgColor = Colors.green
-              ..withValues(alpha: isDark ? 0.3 : 0.2); // Xanh nhạt
-            borderColor = Colors.green;
+            bgColor = Colors.green.withOpacity(0.2); // Xanh nhạt nền
+            borderColor = Colors.green; // Viền xanh đậm
+            textColor = Colors.green[800]!; // Chữ xanh đậm (để dễ đọc)
+            if (isDark)
+              textColor = Colors.greenAccent; // Chữ sáng hơn trong Dark Mode
             icon = Icons.check_circle;
-            textColor = isDark ? Colors.white : Colors.black;
           } else if (isSelected) {
-            bgColor = Colors.red
-              ..withValues(alpha: isDark ? 0.3 : 0.2); // Đỏ nhạt
-            borderColor = Colors.red;
+            bgColor = Colors.red.withOpacity(0.2); // Đỏ nhạt nền
+            borderColor = Colors.red; // Viền đỏ đậm
+            textColor = Colors.red[900]!; // Chữ đỏ đậm (để không bị chìm)
+            if (isDark) textColor = Colors.redAccent;
             icon = Icons.cancel;
-            textColor = isDark ? Colors.white : Colors.black;
           }
         }
 
         return GestureDetector(
           onTap: () => _handleMultipleChoice(option),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(
+              milliseconds: 500,
+            ), // Chuyển màu chậm rãi (500ms)
+            curve: Curves.easeOut,
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor, width: 2),
             ),
             child: Row(
@@ -345,7 +364,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   child: Text(
                     option,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -360,10 +379,11 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // --- UI: SPELLING ---
+  // --- 2. GIAO DIỆN GHÉP TỪ (SPELLING) ---
   Widget _buildSpellingInterface(bool isDark) {
     return Column(
       children: [
+        // Ô điền kết quả
         Wrap(
           alignment: WrapAlignment.center,
           spacing: 8,
@@ -386,16 +406,20 @@ class _QuizScreenState extends State<QuizScreen> {
           }),
         ),
         const SizedBox(height: 40),
+
+        // Bàn phím ký tự
         Wrap(
           alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 10,
+          runSpacing: 10,
           children: List.generate(_poolLetters.length, (index) {
             bool isSelected = _selectedIndices.contains(index);
-            return GestureDetector(
-              onTap: () => _onLetterTap(index, _poolLetters[index]),
-              child: Opacity(
-                opacity: isSelected ? 0.0 : 1.0,
+            // Dùng AnimatedOpacity để chữ biến mất/hiện lại mượt mà
+            return AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: isSelected ? 0.0 : 1.0,
+              child: GestureDetector(
+                onTap: () => _onLetterTap(index, _poolLetters[index]),
                 child: Container(
                   width: 50,
                   height: 50,
@@ -405,7 +429,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 3),
                       ),
@@ -428,6 +452,7 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
+  // Widget ô vuông chứa chữ cái (Đã sửa lỗi hiển thị màu)
   Widget _buildSlotBox(
     String char, {
     bool isEmpty = false,
@@ -442,34 +467,43 @@ class _QuizScreenState extends State<QuizScreen> {
       bgColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
       borderColor = Colors.blueAccent;
 
+      // LOGIC MÀU MỚI: Tương phản cao
       if (isCorrect == true) {
         borderColor = Colors.green;
-        bgColor = Colors.green..withValues(alpha: 0.2);
+        bgColor = Colors.green.withOpacity(0.2);
+        textColor = isDark ? Colors.greenAccent : Colors.green[800]!;
       }
       if (isCorrect == false) {
         borderColor = Colors.red;
-        bgColor = Colors.red..withValues(alpha: 0.2);
-        textColor = Colors.red;
+        bgColor = Colors.red.withOpacity(0.2);
+        textColor = isDark
+            ? Colors.redAccent
+            : Colors.red[900]!; // Chữ đỏ đậm để dễ đọc trên nền đỏ nhạt
       }
     }
 
-    return Container(
-      width: 45,
-      height: 45,
+    // Dùng AnimatedContainer để màu chuyển mượt mà
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      width: 48,
+      height: 48,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: borderColor, width: 2),
       ),
       child: Text(
         char,
         style: TextStyle(
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
           color: textColor,
         ),
       ),
     );
   }
+
+  // Getter helper
+  bool get isCorrect => _isCorrect ?? false;
 }

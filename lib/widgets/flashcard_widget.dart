@@ -67,11 +67,11 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
             transform: transform,
             alignment: Alignment.center,
             child: _animation.value < 0.5
-                ? _buildFront() // Mặt trước (Có hiệu ứng bọt biển)
+                ? _buildFront()
                 : Transform(
                     transform: Matrix4.identity()..rotateY(pi),
                     alignment: Alignment.center,
-                    child: _buildBack(), // Mặt sau
+                    child: _buildBack(),
                   ),
           );
         },
@@ -79,79 +79,71 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
     );
   }
 
-  // --- MẶT TRƯỚC: HIỆU ỨNG BỌT BIỂN & GRADIENT ---
+  // --- HÀM VẼ BỌT BIỂN ĐẸP ---
+  Widget _buildGlassBubble(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // Gradient giúp bọt biển có chiều sâu 3D (Sáng -> Mờ dần)
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.2), // Điểm sáng
+            Colors.white.withOpacity(0.0), // Điểm trong suốt
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        // Viền mỏng để bọt biển sắc nét hơn
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+      ),
+    );
+  }
+
+  // --- MẶT TRƯỚC ---
   Widget _buildFront() {
     final settings = Provider.of<SettingsProvider>(context);
-    final baseColor = settings.flashcardColor; // Màu người dùng chọn
+    final baseColor = settings.flashcardColor;
 
     return Container(
       width: double.infinity,
       height: 500,
+      // ClipRect để cắt những phần bọt biển tràn ra ngoài
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: baseColor..withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        // Màu nền Gradient chính
+        // Nền Gradient chính của thẻ
         gradient: LinearGradient(
-          colors: [baseColor..withValues(alpha: 0.8), baseColor],
+          colors: [baseColor.withOpacity(0.8), baseColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      // Stack để xếp chồng các lớp "bọt biển"
       child: Stack(
         children: [
-          // Bọt biển 1 (To, góc trên phải)
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white..withValues(alpha: 0.1), // Màu trắng mờ
-              ),
-            ),
-          ),
-          // Bọt biển 2 (Nhỏ, góc dưới trái)
-          Positioned(
-            bottom: -30,
-            left: -30,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white..withValues(alpha: 0.1),
-              ),
-            ),
-          ),
-          // Bọt biển 3 (Nhỏ xíu, ở giữa)
-          Positioned(
-            top: 100,
-            left: 50,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white..withValues(alpha: 0.15),
-              ),
-            ),
-          ),
+          // Bọt biển 1: To khổng lồ, góc trên phải
+          Positioned(top: -80, right: -80, child: _buildGlassBubble(250)),
 
-          // Nội dung chính (Từ vựng)
+          // Bọt biển 2: Vừa, góc dưới trái
+          Positioned(bottom: -50, left: -50, child: _buildGlassBubble(200)),
+
+          // Bọt biển 3: Nhỏ, trôi lơ lửng ở giữa
+          Positioned(top: 120, left: 40, child: _buildGlassBubble(40)),
+
+          // Bọt biển 4: Nhỏ, góc dưới phải
+          Positioned(bottom: 80, right: 40, child: _buildGlassBubble(20)),
+
+          // Nội dung chính
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.touch_app, color: Colors.white60, size: 36),
+                Icon(
+                  Icons.touch_app,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 40,
+                ),
                 const SizedBox(height: 30),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -160,12 +152,12 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 42, // Chữ to hơn
-                      fontWeight: FontWeight.w900, // Đậm hơn
-                      letterSpacing: 1.5,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.0,
                       shadows: [
                         Shadow(
-                          offset: Offset(2, 2),
+                          offset: Offset(0, 2),
                           blurRadius: 4,
                           color: Colors.black26,
                         ),
@@ -174,10 +166,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
                   ),
                 ),
                 const SizedBox(height: 15),
-                const Text(
+                Text(
                   "Chạm để lật",
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Colors.white.withOpacity(0.8),
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
                   ),
@@ -190,17 +182,16 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
     );
   }
 
-  // --- MẶT SAU: SẠCH SẼ, CHI TIẾT ---
+  // --- MẶT SAU (Giữ nguyên cấu trúc sạch sẽ) ---
   Widget _buildBack() {
     String fullMeaning = widget.vocabulary.meaning;
     String phonetic = VocabParser.getPhonetic(fullMeaning);
     String vietnamese = VocabParser.getVietnamese(fullMeaning);
     String englishDef = fullMeaning;
     if (phonetic.isNotEmpty) englishDef = englishDef.replaceAll(phonetic, "");
-    if (vietnamese.isNotEmpty) {
+    if (vietnamese.isNotEmpty)
       englishDef = englishDef.split("🇻🇳").first.replaceAll("🇬🇧", "");
-      englishDef = englishDef.trim();
-    }
+    englishDef = englishDef.trim();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).cardColor;
@@ -217,13 +208,6 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
           color: isDark ? Colors.white10 : Colors.grey.shade200,
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black..withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -283,10 +267,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.amber.withValues(alpha: 0.1)
+                    ? Colors.amber.withOpacity(0.1)
                     : Colors.amber[50],
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber..withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.amber.withOpacity(0.3)),
               ),
               child: Column(
                 children: [

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/vocabulary_model.dart';
-import '../models/user_model.dart'; // Đã thêm import này để fix lỗi User
+import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vocab_provider.dart';
 import '../utils/string_utils.dart';
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // --- 1. DIALOG TẠO CHỦ ĐỀ ---
+  // --- 1. DIALOG & SHEET ---
   void _showAddTopicDialog() {
     final nameController = TextEditingController();
     showDialog(
@@ -53,9 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: TextField(
           controller: nameController,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: "Ví dụ: Toeic, Giao tiếp...",
-          ),
+          decoration: const InputDecoration(hintText: "Ví dụ: Toeic..."),
         ),
         actions: [
           TextButton(
@@ -63,10 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text("Huỷ"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-              foregroundColor: Colors.white,
-            ),
             onPressed: () {
               if (nameController.text.trim().isNotEmpty) {
                 final user = Provider.of<AuthProvider>(
@@ -87,13 +81,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- 2. BOTTOM SHEET CHỌN CHỦ ĐỀ (Đã nâng cao hơn) ---
   void _showAddToTopicSheet(Vocabulary vocab) {
     final provider = Provider.of<VocabProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -117,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 15),
                 const Text(
-                  "Thêm vào chủ đề",
+                  "Chọn chủ đề",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 15),
@@ -136,12 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icons.folder,
                               color: Colors.amber,
                             ),
-                            title: Text(
-                              topic.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            title: Text(topic.name),
                             trailing: vocab.topicId == topic.id
                                 ? const Icon(
                                     Icons.check_circle,
@@ -164,19 +151,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const Divider(),
                         ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Colors.blueAccent,
-                            radius: 15,
-                            child: Icon(
-                              Icons.add,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          ),
+                          leading: const Icon(Icons.add, color: Colors.blue),
                           title: const Text(
                             "Tạo chủ đề mới",
                             style: TextStyle(
-                              color: Colors.blueAccent,
+                              color: Colors.blue,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -189,8 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // --- SỬA: Tăng chiều cao khoảng trống lên 100 để tránh vướng nút điều hướng ---
-                const SizedBox(height: 100),
+                const SizedBox(height: 50),
               ],
             ),
           ),
@@ -199,7 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- 3. DIALOG XÓA ---
   void _confirmDelete(Vocabulary vocab) {
     showDialog(
       context: context,
@@ -221,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 listen: false,
               ).deleteVocabulary(vocab.id!, vocab.userId);
-              // ignore: use_build_context_synchronously
               if (mounted) Navigator.pop(context);
             },
             child: const Text("Xóa"),
@@ -232,6 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // --- UI WIDGETS ---
+
+  // 1. Header
   Widget _buildHeader(User? user, VocabProvider provider) {
     return Stack(
       children: [
@@ -313,9 +291,10 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
+              // SỬA: Dùng .withOpacity thay vì ..withValues để an toàn
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black..withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -346,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 2. Action Card (ĐÃ SỬA LỖI MẤT HÌNH)
   Widget _buildActionCard(
     String title,
     IconData icon,
@@ -358,9 +338,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           height: 90,
           decoration: BoxDecoration(
-            color: color..withValues(alpha: 0.1),
+            // SỬA QUAN TRỌNG: Dùng .withOpacity (1 dấu chấm)
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: color..withValues(alpha: 0.3)),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -372,6 +353,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: color, fontWeight: FontWeight.bold),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 3. Topic Chip (ĐÃ SỬA LỖI MÀU CHỮ)
+  Widget _buildTopicChip(
+    int? id,
+    String label,
+    VocabProvider provider,
+    bool isDark,
+  ) {
+    bool isSelected = _selectedTopicId == id;
+
+    // Màu chữ khi CHƯA chọn: Nếu Dark mode thì xám nhạt, Light mode thì xám đậm
+    Color unselectedTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _selectedTopicId = id);
+          provider.filterByTopic(id);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.blueAccent : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? Colors.blueAccent
+                  : (isDark ? Colors.grey[700]! : Colors.grey[400]!),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected
+                  ? Colors.white
+                  : unselectedTextColor, // Sửa màu chữ
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -397,6 +424,8 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.zero,
               children: [
                 const SizedBox(height: 20),
+
+                // QUICK ACTIONS
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -439,16 +468,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 25),
+
+                // TOPIC BAR (Sửa lỗi hiển thị)
                 SizedBox(
                   height: 40,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     children: [
-                      _buildTopicChip(null, "Tất cả", vocabProvider),
+                      _buildTopicChip(null, "Tất cả", vocabProvider, isDark),
                       ...vocabProvider.topics.map(
-                        (t) => _buildTopicChip(t.id, t.name, vocabProvider),
+                        (t) => _buildTopicChip(
+                          t.id,
+                          t.name,
+                          vocabProvider,
+                          isDark,
+                        ),
                       ),
                       ActionChip(
                         avatar: const Icon(
@@ -463,22 +500,29 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        backgroundColor: Colors.blue..withValues(alpha: 0.1),
+                        // Sửa background color dùng 1 dấu chấm
+                        backgroundColor: Colors.blue.withOpacity(0.1),
                         side: BorderSide.none,
                         onPressed: _showAddTopicDialog,
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 15),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Text(
+                  child: Text(
                     "Danh sách từ vựng",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
+
                 if (vocabList.isEmpty)
                   Center(
                     child: Padding(
@@ -520,7 +564,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black..withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -541,12 +585,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.all(16),
                               child: Row(
                                 children: [
+                                  // ICON AVATAR (SỬA LỖI MẤT HÌNH)
                                   Container(
                                     width: 50,
                                     height: 50,
                                     decoration: BoxDecoration(
-                                      color: Colors.blueAccent
-                                        ..withValues(alpha: 0.1),
+                                      // SỬA: Dùng 1 dấu chấm .withOpacity
+                                      color: Colors.blueAccent.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     alignment: Alignment.center,
@@ -569,9 +614,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                       children: [
                                         Text(
                                           vocab.word,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -597,7 +645,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ],
                                     ),
                                   ),
-                                  // --- CẬP NHẬT: Thêm lại nút DELETE vào cột này ---
                                   Column(
                                     children: [
                                       GestureDetector(
@@ -626,7 +673,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      // Nút xóa được thêm vào đây
                                       GestureDetector(
                                         onTap: () => _confirmDelete(vocab),
                                         child: const Icon(
@@ -662,38 +708,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AddWordScreen()),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopicChip(int? id, String label, VocabProvider provider) {
-    bool isSelected = _selectedTopicId == id;
-    return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _selectedTopicId = id);
-          provider.filterByTopic(id);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.blueAccent : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? Colors.blueAccent : Colors.grey[400]!,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
       ),
     );
