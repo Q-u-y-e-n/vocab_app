@@ -183,11 +183,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty)
+    if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
         body: const Center(child: Text("Cần ít nhất 4 từ vựng.")),
       );
+    }
 
     final question = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
@@ -240,7 +241,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 15,
                           offset: const Offset(0, 5),
                         ),
@@ -277,8 +278,8 @@ class _QuizScreenState extends State<QuizScreen> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isCorrect == true
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
+                                    ? Colors.green.withValues(alpha: 0.1)
+                                    : Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -329,14 +330,15 @@ class _QuizScreenState extends State<QuizScreen> {
 
         if (_isAnswered) {
           if (isCorrectAnswer) {
-            bgColor = Colors.green.withOpacity(0.2); // Xanh nhạt nền
+            bgColor = Colors.green.withValues(alpha: 0.2); // Xanh nhạt nền
             borderColor = Colors.green; // Viền xanh đậm
             textColor = Colors.green[800]!; // Chữ xanh đậm (để dễ đọc)
-            if (isDark)
+            if (isDark) {
               textColor = Colors.greenAccent; // Chữ sáng hơn trong Dark Mode
-            icon = Icons.check_circle;
+              icon = Icons.check_circle;
+            }
           } else if (isSelected) {
-            bgColor = Colors.red.withOpacity(0.2); // Đỏ nhạt nền
+            bgColor = Colors.red.withValues(alpha: 0.2); // Đỏ nhạt nền
             borderColor = Colors.red; // Viền đỏ đậm
             textColor = Colors.red[900]!; // Chữ đỏ đậm (để không bị chìm)
             if (isDark) textColor = Colors.redAccent;
@@ -429,7 +431,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 3),
                       ),
@@ -470,12 +472,12 @@ class _QuizScreenState extends State<QuizScreen> {
       // LOGIC MÀU MỚI: Tương phản cao
       if (isCorrect == true) {
         borderColor = Colors.green;
-        bgColor = Colors.green.withOpacity(0.2);
+        bgColor = Colors.green.withValues(alpha: 0.2);
         textColor = isDark ? Colors.greenAccent : Colors.green[800]!;
       }
       if (isCorrect == false) {
         borderColor = Colors.red;
-        bgColor = Colors.red.withOpacity(0.2);
+        bgColor = Colors.red.withValues(alpha: 0.2);
         textColor = isDark
             ? Colors.redAccent
             : Colors.red[900]!; // Chữ đỏ đậm để dễ đọc trên nền đỏ nhạt

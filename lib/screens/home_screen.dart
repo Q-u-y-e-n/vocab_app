@@ -295,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // SỬA: Dùng .withOpacity thay vì ..withValues để an toàn
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -340,9 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 90,
           decoration: BoxDecoration(
             // SỬA QUAN TRỌNG: Dùng .withOpacity (1 dấu chấm)
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -502,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         // Sửa background color dùng 1 dấu chấm
-                        backgroundColor: Colors.blue.withOpacity(0.1),
+                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
                         side: BorderSide.none,
                         onPressed: _showAddTopicDialog,
                       ),
@@ -565,7 +565,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -592,7 +592,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     height: 50,
                                     decoration: BoxDecoration(
                                       // SỬA: Dùng 1 dấu chấm .withOpacity
-                                      color: Colors.blueAccent.withOpacity(0.1),
+                                      color: Colors.blueAccent.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     alignment: Alignment.center,

@@ -89,14 +89,17 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
         // Gradient giúp bọt biển có chiều sâu 3D (Sáng -> Mờ dần)
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.2), // Điểm sáng
-            Colors.white.withOpacity(0.0), // Điểm trong suốt
+            Colors.white.withValues(alpha: 0.2), // Điểm sáng
+            Colors.white.withValues(alpha: 0.0), // Điểm trong suốt
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         // Viền mỏng để bọt biển sắc nét hơn
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1.0,
+        ),
       ),
     );
   }
@@ -115,7 +118,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
         borderRadius: BorderRadius.circular(30),
         // Nền Gradient chính của thẻ
         gradient: LinearGradient(
-          colors: [baseColor.withOpacity(0.8), baseColor],
+          colors: [baseColor.withValues(alpha: 0.8), baseColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -141,7 +144,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               children: [
                 Icon(
                   Icons.touch_app,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   size: 40,
                 ),
                 const SizedBox(height: 30),
@@ -169,7 +172,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
                 Text(
                   "Chạm để lật",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
                   ),
@@ -189,9 +192,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
     String vietnamese = VocabParser.getVietnamese(fullMeaning);
     String englishDef = fullMeaning;
     if (phonetic.isNotEmpty) englishDef = englishDef.replaceAll(phonetic, "");
-    if (vietnamese.isNotEmpty)
+    if (vietnamese.isNotEmpty) {
       englishDef = englishDef.split("🇻🇳").first.replaceAll("🇬🇧", "");
-    englishDef = englishDef.trim();
+      englishDef = englishDef.trim();
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).cardColor;
@@ -267,10 +271,10 @@ class _FlashcardWidgetState extends State<FlashcardWidget>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.amber.withOpacity(0.1)
+                    ? Colors.amber.withValues(alpha: 0.1)
                     : Colors.amber[50],
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
